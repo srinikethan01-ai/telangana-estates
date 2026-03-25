@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: telangana-estates
+    env: node
+    plan: free
+    buildCommand: npm install -g pnpm && pnpm install --no-frozen-lockfile && BASE_PATH=/ pnpm --filter @workspace/telangana-estates run build && pnpm --filter @workspace/api-server run build
+    startCommand: node artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BASE_PATH
+        value: /
+      - key: MONGO_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
