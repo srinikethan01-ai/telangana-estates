@@ -1,31 +1,30 @@
-import express from "express";
+import app from "./app.js";
+import { logger } from "./lib/logger.js";
+import { connectMongoDB } from "./lib/mongodb.js";
 
-  const app = express();
-  const PORT = Number(process.env.PORT || 10000);
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
 
-  if (isNaN(PORT) || PORT <= 0) {
-    console.error("Invalid PORT:", process.env.PORT);
-    process.exit(1);
-  }
+const PORT = Number(process.env.PORT || 10000);
 
-  app.get("/health", (_req, res) => {
-    res.json({ status: "ok", port: PORT, node: process.version });
-  });
+if (isNaN(PORT) || PORT <= 0) {
+  console.error("Invalid PORT:", process.env.PORT);
+  process.exit(1);
+}
 
-  app.get("/", (_req, res) => {
-    res.json({ message: "Telangana Estates API", version: process.version });
-  });
+app.listen(PORT, "0.0.0.0", () => {
+  logger.info({ port: PORT }, "Server listening");
+  connectMongoDB()
+    .then(() => logger.info("MongoDB connected"))
+    .catch((err) => logger.error({ err }, "MongoDB connection failed"));
+});
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log("Server started on port", PORT);
-  });
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "Uncaught exception");
+  process.exit(1);
+});
 
-  process.on("uncaughtException", (err) => {
-    console.error("Uncaught exception:", err);
-    process.exit(1);
-  });
-
-  process.on("unhandledRejection", (reason) => {
-    console.error("Unhandled rejection:", reason);
-  });
-  
+process.on("unhandledRejection", (reason) => {
+  logger.warn({ reason }, "Unhandled rejection");
+});
