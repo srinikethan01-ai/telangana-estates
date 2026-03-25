@@ -1,17 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
-    "types": ["node"]
-  },
-  "include": ["src"],
-  "references": [
-    {
-      "path": "../../lib/db"
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+      "outDir": "dist",
+      "rootDir": "src",
+      "types": ["node"]
     },
-    {
-      "path": "../../lib/api-zod"
-    }
-  ]
-}
+    "include": ["src"],
+    "references": [
+      {
+        "path": "../../lib/api-zod"
+      }
+    ]
+  }
+  
