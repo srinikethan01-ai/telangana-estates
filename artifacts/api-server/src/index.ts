@@ -1,34 +1,31 @@
-import app from "./app.js";
-import { logger } from "./lib/logger.js";
-import { connectMongoDB } from "./lib/mongodb.js";
+import express from "express";
 
-// ✅ Root route
-app.get("/", (_req, res) => {
-  res.json({ message: "API is running 🚀" });
-});
+  const app = express();
+  const PORT = Number(process.env.PORT || 10000);
 
-// ✅ Health check (must respond before MongoDB is ready)
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+  if (isNaN(PORT) || PORT <= 0) {
+    console.error("Invalid PORT:", process.env.PORT);
+    process.exit(1);
+  }
 
-const rawPort = process.env["PORT"] || "10000";
-const port = Number(rawPort);
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", port: PORT, node: process.version });
+  });
 
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+  app.get("/", (_req, res) => {
+    res.json({ message: "Telangana Estates API", version: process.version });
+  });
 
-// Start listening immediately so Render's health check passes
-app.listen(port, () => {
-  logger.info({ port }, "Server listening 🚀");
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log("Server started on port", PORT);
+  });
 
-  // Connect to MongoDB after server is already accepting requests
-  connectMongoDB()
-    .then(() => {
-      logger.info("MongoDB connected successfully");
-    })
-    .catch((err) => {
-      logger.error({ err }, "Failed to connect to MongoDB — API routes requiring DB will fail");
-    });
-});
+  process.on("uncaughtException", (err) => {
+    console.error("Uncaught exception:", err);
+    process.exit(1);
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled rejection:", reason);
+  });
+  
