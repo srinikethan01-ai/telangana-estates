@@ -4,6 +4,7 @@ import session from "express-session";
 import pinoHttp from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 
@@ -45,19 +46,33 @@ app.use(
   })
 );
 
+// API routes
 app.use("/api", router);
 
-if (process.env.NODE_ENV === "production") {
-  const currentDir = path.dirname(fileURLToPath(import.meta.url));
-  const frontendPath = path.resolve(
-    currentDir,
-    "../../telangana-estates/dist/public"
-  );
+// Serve built frontend static files in production
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const frontendPath = path.resolve(
+  currentDir,
+  "../../telangana-estates/dist/public"
+);
 
+if (fs.existsSync(frontendPath)) {
+  logger.info({ frontendPath }, "Serving frontend static files");
   app.use(express.static(frontendPath));
 
+  // SPA fallback — serve index.html for any non-API route
   app.get("*", (_req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+    const indexFile = path.join(frontendPath, "index.html");
+    if (fs.existsSync(indexFile)) {
+      res.sendFile(indexFile);
+    } else {
+      res.status(200).json({ status: "ok", service: "Telangana Estates API" });
+    }
+  });
+} else {
+  logger.warn({ frontendPath }, "Frontend build not found — serving API only");
+  app.get("/", (_req, res) => {
+    res.json({ status: "ok", service: "Telangana Estates API" });
   });
 }
 

@@ -3,9 +3,9 @@ services:
     name: telangana-estates
     env: node
     plan: free
-    buildCommand: npm install -g pnpm && pnpm install --no-frozen-lockfile && BASE_PATH=/ pnpm --filter @workspace/telangana-estates run build && pnpm --filter @workspace/api-server run build
+    buildCommand: bash build.sh
     startCommand: node artifacts/api-server/dist/index.mjs
-    healthCheckPath: /api/healthz
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
