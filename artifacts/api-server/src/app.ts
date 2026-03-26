@@ -65,6 +65,11 @@ app.use(
   })
 );
 
+// Render health check — must respond before MongoDB is connected
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 // API routes
 app.use("/api", router);
 

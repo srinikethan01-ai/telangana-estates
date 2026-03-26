@@ -4,15 +4,19 @@ import app from "./app.js";
 
   const PORT = Number(process.env.PORT || 10000);
 
+  // Start HTTP server immediately so Render's health check passes right away
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    logger.info({ port: PORT }, "Server listening");
+  });
+
+  // Connect to MongoDB after server is up — don't block startup
   connectMongoDB()
     .then(() => {
-      app.listen(PORT, "0.0.0.0", () => {
-        logger.info({ port: PORT }, "Server listening");
-      });
+      logger.info("MongoDB connected successfully");
     })
     .catch((err) => {
-      logger.error({ err }, "Failed to connect to MongoDB — check MONGO_URI env var");
-      process.exit(1);
+      logger.error({ err }, "MongoDB connection failed — check MONGO_URI env var");
+      // Don't exit — server stays up so health check keeps passing
     });
 
   process.on("uncaughtException", (err) => {
@@ -22,6 +26,5 @@ import app from "./app.js";
 
   process.on("unhandledRejection", (reason) => {
     logger.error({ reason }, "Unhandled rejection");
-    process.exit(1);
   });
   
