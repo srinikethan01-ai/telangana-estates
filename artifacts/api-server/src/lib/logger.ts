@@ -1,18 +1,22 @@
-import pino from "pino";
-
+// Simple production-safe logger — no pino workers, no thread-stream, no crashes
   const isProduction = process.env.NODE_ENV === "production";
 
-  export const logger = isProduction
-    ? pino(
-        { level: process.env.LOG_LEVEL ?? "info" },
-        // sync:true avoids thread-stream workers which break in esbuild bundles
-        pino.destination({ sync: true })
-      )
-    : pino({
-        level: process.env.LOG_LEVEL ?? "info",
-        transport: {
-          target: "pino-pretty",
-          options: { colorize: true },
-        },
-      });
+  function formatMsg(level: string, obj: Record<string, unknown> | string, msg?: string) {
+    const time = new Date().toISOString();
+    if (typeof obj === "string") return `${time} [${level}] ${obj}`;
+    return `${time} [${level}] ${msg ?? ""} ${JSON.stringify(obj)}`;
+  }
+
+  export const logger = {
+    info: (obj: Record<string, unknown> | string, msg?: string) =>
+      console.log(formatMsg("INFO", obj, msg)),
+    warn: (obj: Record<string, unknown> | string, msg?: string) =>
+      console.warn(formatMsg("WARN", obj, msg)),
+    error: (obj: Record<string, unknown> | string, msg?: string) =>
+      console.error(formatMsg("ERROR", obj, msg)),
+    debug: (obj: Record<string, unknown> | string, msg?: string) =>
+      isProduction ? undefined : console.debug(formatMsg("DEBUG", obj, msg)),
+  };
+
+  export default logger;
   
