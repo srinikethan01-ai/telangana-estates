@@ -12,7 +12,9 @@ const pinoOptions = {
 };
 
 export const logger = isProduction
-  ? pino(pinoOptions, pino.destination({ sync: true }))
+  ? pino({
+      ...pinoOptions,
+    })
   : pino({
       ...pinoOptions,
       transport: {
