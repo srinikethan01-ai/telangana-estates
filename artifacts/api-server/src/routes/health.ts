@@ -1,9 +1,12 @@
+import { Router, type IRouter } from "express";
 
-import express from "express";
+const router: IRouter = Router();
 
-const router = express.Router();
+router.get("/healthz", (_req, res) => {
+  res.json({ status: "ok" });
+});
 
-router.get("/", (req, res) => {
+router.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
