@@ -29,7 +29,26 @@ app.use(
     },
   }),
 );
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = [
+    "https://telangana-frontend.vercel.app",
+    /\.vercel\.app$/,
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ];
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (curl, Postman, server-to-server)
+        if (!origin) return callback(null, true);
+        const allowed =
+          allowedOrigins.some((o) =>
+            typeof o === "string" ? o === origin : o.test(origin)
+          );
+        callback(allowed ? null : new Error("CORS: origin not allowed"), allowed);
+      },
+      credentials: true,
+    })
+  );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

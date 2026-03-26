@@ -1,18 +1,27 @@
-import express from "express";
-import { logger } from "./lib/logger.js";
+import app from "./app.js";
+  import { connectMongoDB } from "./lib/mongodb.js";
+  import { logger } from "./lib/logger.js";
 
-const app = express();
-const PORT = Number(process.env.PORT || 10000);
+  const PORT = Number(process.env.PORT || 10000);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", test: "logger-only" });
-});
+  connectMongoDB()
+    .then(() => {
+      app.listen(PORT, "0.0.0.0", () => {
+        logger.info({ port: PORT }, "Server listening");
+      });
+    })
+    .catch((err) => {
+      logger.error({ err }, "Failed to connect to MongoDB — check MONGO_URI env var");
+      process.exit(1);
+    });
 
-app.listen(PORT, "0.0.0.0", () => {
-  logger.info({ port: PORT }, "Server listening - logger test");
-});
+  process.on("uncaughtException", (err) => {
+    logger.error({ err }, "Uncaught exception");
+    process.exit(1);
+  });
 
-process.on("uncaughtException", (err) => {
-  console.error("CRASH:", err.message, err.stack);
-  process.exit(1);
-});
+  process.on("unhandledRejection", (reason) => {
+    logger.error({ reason }, "Unhandled rejection");
+    process.exit(1);
+  });
+  
