@@ -7,7 +7,7 @@ export interface ILead extends Document {
   createdAt: Date;
 }
 
-const LeadSchema = new Schema<ILead>(
+const LeadSchema = new Schema(
   {
     fullName: { type: String, required: true },
     phone: { type: String, required: true },
