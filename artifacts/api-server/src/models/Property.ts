@@ -11,7 +11,7 @@ export interface IProperty extends Document {
   createdAt: Date;
 }
 
-const PropertySchema = new Schema<IProperty>(
+const PropertySchema = new Schema(
   {
     title: { type: String, required: true },
     location: { type: String, required: true },
