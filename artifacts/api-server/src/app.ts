@@ -1,63 +1,76 @@
 import express, { type Express } from "express";
-import cors from "cors";
-import session from "express-session";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
-import router from "./routes/index.js";
-import { logger } from "./lib/logger.js";
+  import cors from "cors";
+  import session from "express-session";
+  import path from "path";
+  import { fileURLToPath } from "url";
+  import fsSync from "fs";
+  import router from "./routes/index.js";
+  import { logger } from "./lib/logger.js";
 
-const app: Express = express();
+  const app: Express = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  // CORS — allow Vercel frontend + local dev
+  const allowedOrigins = [
+    "https://telangana-frontend.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ];
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // allow server-to-server
+        const allowed = allowedOrigins.some((o) => origin === o) ||
+          origin.endsWith(".vercel.app");
+        callback(null, allowed);
+      },
+      credentials: true,
+    })
+  );
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "telangana-estates-secret-2024",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    },
-  })
-);
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-// Render health check — must respond before MongoDB is connected
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "telangana-estates-secret-2024",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      },
+    })
+  );
 
-// API routes
-app.use("/api", router);
-
-// Serve built frontend static files in production
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const frontendPath = path.resolve(
-  currentDir,
-  "../../telangana-estates/dist/public"
-);
-
-if (fs.existsSync(frontendPath)) {
-  logger.info({ frontendPath }, "Serving frontend static files");
-  app.use(express.static(frontendPath));
-
-  // SPA fallback — serve index.html for any non-API route
-  app.get("*", (_req, res) => {
-    const indexFile = path.join(frontendPath, "index.html");
-    if (fs.existsSync(indexFile)) {
-      res.sendFile(indexFile);
-    } else {
-      res.status(200).json({ status: "ok", service: "Telangana Estates API" });
-    }
+  // Render health check — always responds immediately
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
   });
-} else {
-  logger.warn({ frontendPath }, "Frontend build not found — serving API only");
-  app.get("/", (_req, res) => {
-    res.json({ status: "ok", service: "Telangana Estates API" });
-  });
-}
 
-export default app;
+  // API routes
+  app.use("/api", router);
+
+  // Serve built frontend static files in production
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  const frontendPath = path.resolve(currentDir, "../../telangana-estates/dist/public");
+
+  if (fsSync.existsSync(frontendPath)) {
+    logger.info("Serving frontend static files");
+    app.use(express.static(frontendPath));
+    app.get("*", (_req, res) => {
+      const indexFile = path.join(frontendPath, "index.html");
+      if (fsSync.existsSync(indexFile)) {
+        res.sendFile(indexFile);
+      } else {
+        res.status(200).json({ status: "ok" });
+      }
+    });
+  } else {
+    app.get("/", (_req, res) => {
+      res.json({ status: "ok", service: "Telangana Estates API" });
+    });
+  }
+
+  export default app;
+  
